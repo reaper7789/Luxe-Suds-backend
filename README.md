@@ -1,140 +1,280 @@
-# accepts
+# BSON parser
 
-[![NPM Version][npm-version-image]][npm-url]
-[![NPM Downloads][npm-downloads-image]][npm-url]
-[![Node.js Version][node-version-image]][node-version-url]
-[![Build Status][github-actions-ci-image]][github-actions-ci-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+BSON is short for "Binary JSON," and is the binary-encoded serialization of JSON-like documents.
+You can learn more about it in [the specification](http://bsonspec.org).
 
-Higher level content negotiation based on [negotiator](https://www.npmjs.com/package/negotiator).
-Extracted from [koa](https://www.npmjs.com/package/koa) for general use.
+### Table of Contents
 
-In addition to negotiator, it allows:
+- [Usage](#usage)
+- [Bugs/Feature Requests](#bugs--feature-requests)
+- [Installation](#installation)
+- [Documentation](#documentation)
+- [FAQ](#faq)
 
-- Allows types as an array or arguments list, ie `(['text/html', 'application/json'])`
-  as well as `('text/html', 'application/json')`.
-- Allows type shorthands such as `json`.
-- Returns `false` when no types match
-- Treats non-existent headers as `*`
+
+### Release Integrity
+
+Releases are created automatically and signed using the [Node team's GPG key](https://pgp.mongodb.com/node-driver.asc). This applies to the git tag as well as all release packages provided as part of a GitHub release. To verify the provided packages, download the key and import it using gpg:
+
+```shell
+gpg --import node-driver.asc
+```
+
+The GitHub release contains a detached signature file for the NPM package (named
+`bson-X.Y.Z.tgz.sig`).
+
+The following command returns the link npm package. 
+```shell
+npm view bson@vX.Y.Z dist.tarball 
+```
+
+Using the result of the above command, a `curl` command can return the official npm package for the release.
+
+To verify the integrity of the downloaded package, run the following command:
+```shell
+gpg --verify bson-X.Y.Z.tgz.sig bson-X.Y.Z.tgz
+```
+
+>[!Note]
+No verification is done when using npm to install the package. The contents of the Github tarball and npm's tarball are identical.
+
+## Bugs / Feature Requests
+
+Think you've found a bug? Want to see a new feature in `bson`? Please open a case in our issue management tool, JIRA:
+
+1. Create an account and login: [jira.mongodb.org](https://jira.mongodb.org)
+2. Navigate to the NODE project: [jira.mongodb.org/browse/NODE](https://jira.mongodb.org/browse/NODE)
+3. Click **Create Issue** - Please provide as much information as possible about the issue and how to reproduce it.
+
+Bug reports in JIRA for the NODE driver project are **public**.
+
+## Usage
+
+To build a new version perform the following operations:
+
+```
+npm install
+npm run build
+```
+
+### Node.js or Bundling Usage
+
+When using a bundler or Node.js you can import bson using the package name:
+
+```js
+import { BSON, EJSON, ObjectId } from 'bson';
+// or:
+// const { BSON, EJSON, ObjectId } = require('bson');
+
+const bytes = BSON.serialize({ _id: new ObjectId() });
+console.log(bytes);
+const doc = BSON.deserialize(bytes);
+console.log(EJSON.stringify(doc));
+// {"_id":{"$oid":"..."}}
+```
+
+### Browser Usage
+
+If you are working directly in the browser without a bundler please use the `.mjs` bundle like so:
+
+```html
+<script type="module">
+  import { BSON, EJSON, ObjectId } from './lib/bson.mjs';
+
+  const bytes = BSON.serialize({ _id: new ObjectId() });
+  console.log(bytes);
+  const doc = BSON.deserialize(bytes);
+  console.log(EJSON.stringify(doc));
+  // {"_id":{"$oid":"..."}}
+</script>
+```
 
 ## Installation
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+```sh
+npm install bson
+```
+
+### MongoDB Node.js Driver Version Compatibility
+
+Only the following version combinations with the [MongoDB Node.js Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
+
+|               | `bson@1.x` | `bson@4.x` | `bson@5.x` | `bson@6.x` |
+| ------------- | ---------- | ---------- | ---------- | ---------- |
+| `mongodb@6.x` | N/A        | N/A        | N/A        | ✓          |
+| `mongodb@5.x` | N/A        | N/A        | ✓          | N/A        |
+| `mongodb@4.x` | N/A        | ✓          | N/A        | N/A        |
+| `mongodb@3.x` | ✓          | N/A        | N/A        | N/A        |
+
+## Documentation
+
+### BSON
+
+[API documentation](https://mongodb.github.io/node-mongodb-native/Next/modules/BSON.html)
+
+<a name="EJSON"></a>
+
+### EJSON
+
+- [EJSON](#EJSON)
+
+  - [.parse(text, [options])](#EJSON.parse)
+
+  - [.stringify(value, [replacer], [space], [options])](#EJSON.stringify)
+
+  - [.serialize(bson, [options])](#EJSON.serialize)
+
+  - [.deserialize(ejson, [options])](#EJSON.deserialize)
+
+<a name="EJSON.parse"></a>
+
+#### _EJSON_.parse(text, [options])
+
+| Param             | Type                 | Default           | Description                                                                        |
+| ----------------- | -------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| text              | <code>string</code>  |                   |                                                                                    |
+| [options]         | <code>object</code>  |                   | Optional settings                                                                  |
+| [options.relaxed] | <code>boolean</code> | <code>true</code> | Attempt to return native JS types where possible, rather than BSON types (if true) |
+
+Parse an Extended JSON string, constructing the JavaScript value or object described by that
+string.
+
+**Example**
+
+```js
+const { EJSON } = require('bson');
+const text = '{ "int32": { "$numberInt": "10" } }';
+
+// prints { int32: { [String: '10'] _bsontype: 'Int32', value: '10' } }
+console.log(EJSON.parse(text, { relaxed: false }));
+
+// prints { int32: 10 }
+console.log(EJSON.parse(text));
+```
+
+<a name="EJSON.stringify"></a>
+
+#### _EJSON_.stringify(value, [replacer], [space], [options])
+
+| Param             | Type                                        | Default           | Description                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| value             | <code>object</code>                         |                   | The value to convert to extended JSON                                                                                                                                                                                                                                                                                                              |
+| [replacer]        | <code>function</code> \| <code>array</code> |                   | A function that alters the behavior of the stringification process, or an array of String and Number objects that serve as a whitelist for selecting/filtering the properties of the value object to be included in the JSON string. If this value is null or not provided, all properties of the object are included in the resulting JSON string |
+| [space]           | <code>string</code> \| <code>number</code>  |                   | A String or Number object that's used to insert white space into the output JSON string for readability purposes.                                                                                                                                                                                                                                  |
+| [options]         | <code>object</code>                         |                   | Optional settings                                                                                                                                                                                                                                                                                                                                  |
+| [options.relaxed] | <code>boolean</code>                        | <code>true</code> | Enabled Extended JSON's `relaxed` mode                                                                                                                                                                                                                                                                                                             |
+| [options.legacy]  | <code>boolean</code>                        | <code>true</code> | Output in Extended JSON v1                                                                                                                                                                                                                                                                                                                         |
+
+Converts a BSON document to an Extended JSON string, optionally replacing values if a replacer
+function is specified or optionally including only the specified properties if a replacer array
+is specified.
+
+**Example**
+
+```js
+const { EJSON } = require('bson');
+const Int32 = require('mongodb').Int32;
+const doc = { int32: new Int32(10) };
+
+// prints '{"int32":{"$numberInt":"10"}}'
+console.log(EJSON.stringify(doc, { relaxed: false }));
+
+// prints '{"int32":10}'
+console.log(EJSON.stringify(doc));
+```
+
+<a name="EJSON.serialize"></a>
+
+#### _EJSON_.serialize(bson, [options])
+
+| Param     | Type                | Description                                          |
+| --------- | ------------------- | ---------------------------------------------------- |
+| bson      | <code>object</code> | The object to serialize                              |
+| [options] | <code>object</code> | Optional settings passed to the `stringify` function |
+
+Serializes an object to an Extended JSON string, and reparse it as a JavaScript object.
+
+<a name="EJSON.deserialize"></a>
+
+#### _EJSON_.deserialize(ejson, [options])
+
+| Param     | Type                | Description                                  |
+| --------- | ------------------- | -------------------------------------------- |
+| ejson     | <code>object</code> | The Extended JSON object to deserialize      |
+| [options] | <code>object</code> | Optional settings passed to the parse method |
+
+Deserializes an Extended JSON object into a plain JavaScript object with native/BSON types
+
+## Error Handling
+
+It is our recommendation to use `BSONError.isBSONError()` checks on errors and to avoid relying on parsing `error.message` and `error.name` strings in your code. We guarantee `BSONError.isBSONError()` checks will pass according to semver guidelines, but errors may be sub-classed or their messages may change at any time, even patch releases, as we see fit to increase the helpfulness of the errors.
+
+Any new errors we add to the driver will directly extend an existing error class and no existing error will be moved to a different parent class outside of a major release.
+This means `BSONError.isBSONError()` will always be able to accurately capture the errors that our BSON library throws.
+
+Hypothetical example: A collection in our Db has an issue with UTF-8 data:
+
+```ts
+let documentCount = 0;
+const cursor = collection.find({}, { utf8Validation: true });
+try {
+  for await (const doc of cursor) documentCount += 1;
+} catch (error) {
+  if (BSONError.isBSONError(error)) {
+    console.log(`Found the troublemaker UTF-8!: ${documentCount} ${error.message}`);
+    return documentCount;
+  }
+  throw error;
+}
+```
+
+## React Native
+
+BSON vendors the required polyfills for `TextEncoder`, `TextDecoder`, `atob`, `btoa` imported from React Native and therefore doesn't expect users to polyfill these. One additional polyfill, `crypto.getRandomValues` is recommended and can be installed with the following command:
 
 ```sh
-$ npm install accepts
+npm install --save react-native-get-random-values
 ```
 
-## API
+The following snippet should be placed at the top of the entrypoint (by default this is the root `index.js` file) for React Native projects using the BSON library. These lines must be placed for any code that imports `BSON`.
 
-```js
-var accepts = require('accepts')
+```typescript
+// Required Polyfills For ReactNative
+import 'react-native-get-random-values';
 ```
 
-### accepts(req)
+Finally, import the `BSON` library like so:
 
-Create a new `Accepts` object for the given `req`.
+```typescript
+import { BSON, EJSON } from 'bson';
+```
 
-#### .charset(charsets)
+This will cause React Native to import the `node_modules/bson/lib/bson.rn.cjs` bundle (see the `"react-native"` setting we have in the `"exports"` section of our [package.json](./package.json).)
 
-Return the first accepted charset. If nothing in `charsets` is accepted,
-then `false` is returned.
+### Technical Note about React Native module import
 
-#### .charsets()
+The `"exports"` definition in our `package.json` will result in BSON's CommonJS bundle being imported in a React Native project instead of the ES module bundle. Importing the CommonJS bundle is necessary because BSON's ES module bundle of BSON uses top-level await, which is not supported syntax in [React Native's runtime hermes](https://hermesengine.dev/).
 
-Return the charsets that the request accepts, in the order of the client's
-preference (most preferred first).
+## FAQ
 
-#### .encoding(encodings)
+#### Why does `undefined` get converted to `null`?
 
-Return the first accepted encoding. If nothing in `encodings` is accepted,
-then `false` is returned.
+The `undefined` BSON type has been [deprecated for many years](http://bsonspec.org/spec.html), so this library has dropped support for it. Use the `ignoreUndefined` option (for example, from the [driver](http://mongodb.github.io/node-mongodb-native/2.2/api/MongoClient.html#connect) ) to instead remove `undefined` keys.
 
-#### .encodings()
+#### How do I add custom serialization logic?
 
-Return the encodings that the request accepts, in the order of the client's
-preference (most preferred first).
+This library looks for `toBSON()` functions on every path, and calls the `toBSON()` function to get the value to serialize.
 
-#### .language(languages)
+```javascript
+const BSON = require('bson');
 
-Return the first accepted language. If nothing in `languages` is accepted,
-then `false` is returned.
-
-#### .languages()
-
-Return the languages that the request accepts, in the order of the client's
-preference (most preferred first).
-
-#### .type(types)
-
-Return the first accepted type (and it is returned as the same text as what
-appears in the `types` array). If nothing in `types` is accepted, then `false`
-is returned.
-
-The `types` array can contain full MIME types or file extensions. Any value
-that is not a full MIME type is passed to `require('mime-types').lookup`.
-
-#### .types()
-
-Return the types that the request accepts, in the order of the client's
-preference (most preferred first).
-
-## Examples
-
-### Simple type negotiation
-
-This simple example shows how to use `accepts` to return a different typed
-respond body based on what the client wants to accept. The server lists it's
-preferences in order and will get back the best match between the client and
-server.
-
-```js
-var accepts = require('accepts')
-var http = require('http')
-
-function app (req, res) {
-  var accept = accepts(req)
-
-  // the order of this list is significant; should be server preferred order
-  switch (accept.type(['json', 'html'])) {
-    case 'json':
-      res.setHeader('Content-Type', 'application/json')
-      res.write('{"hello":"world!"}')
-      break
-    case 'html':
-      res.setHeader('Content-Type', 'text/html')
-      res.write('<b>hello, world!</b>')
-      break
-    default:
-      // the fallback is text/plain, so no need to specify it above
-      res.setHeader('Content-Type', 'text/plain')
-      res.write('hello, world!')
-      break
+class CustomSerialize {
+  toBSON() {
+    return 42;
   }
-
-  res.end()
 }
 
-http.createServer(app).listen(3000)
+const obj = { answer: new CustomSerialize() };
+// "{ answer: 42 }"
+console.log(BSON.deserialize(BSON.serialize(obj)));
 ```
-
-You can test this out with the cURL program:
-```sh
-curl -I -H'Accept: text/html' http://localhost:3000/
-```
-
-## License
-
-[MIT](LICENSE)
-
-[coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/accepts/master
-[coveralls-url]: https://coveralls.io/r/jshttp/accepts?branch=master
-[github-actions-ci-image]: https://badgen.net/github/checks/jshttp/accepts/master?label=ci
-[github-actions-ci-url]: https://github.com/jshttp/accepts/actions/workflows/ci.yml
-[node-version-image]: https://badgen.net/npm/node/accepts
-[node-version-url]: https://nodejs.org/en/download
-[npm-downloads-image]: https://badgen.net/npm/dm/accepts
-[npm-url]: https://npmjs.org/package/accepts
-[npm-version-image]: https://badgen.net/npm/v/accepts
